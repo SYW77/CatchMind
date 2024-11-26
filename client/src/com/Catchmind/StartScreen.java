@@ -153,23 +153,31 @@ public class StartScreen {
         // 버튼 클릭 이벤트
         loginBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String userNameInput = username.getText(); // 텍스트 필드 값 가져오기
+                String userNameInput = username.getText();
+                String serverInput = "localhost"; //serverAddress.getText();
+                String portInput = portNum.getText();
 
-                if (!userNameInput.isEmpty() && !userNameInput.equals("Enter your name")) {
-                    // 유저 이름을 데이터베이스에 저장
-                    saveUsernameToDatabase(userNameInput);
-                    
+                if (!userNameInput.isEmpty() && !userNameInput.equals("Enter your name") &&
+                        !serverInput.isEmpty() && !serverInput.equals("Enter the server address") &&
+                        !portInput.isEmpty() && !portInput.equals("Enter the port number")) {
+
+                    // 소켓 연결을 위한 인스턴스 생성
+                    SocketManager socketManager = SocketManager.getInstance(serverInput, Integer.parseInt(portInput));
+
+                    // 서버로 닉네임 전송
+                    socketManager.sendNickname(userNameInput);
+
                     // 다음 화면으로 전환
                     frame.dispose(); // 현재 화면 닫기
                     EventQueue.invokeLater(() -> {
-                    	try {
-                    		GameScreen1 gameScreen = new GameScreen1(userNameInput);
-                    	} catch (Exception ex) {
-                    		ex.printStackTrace();
-                    	}
+                        try {
+                            GameScreen1 gameScreen = new GameScreen1(userNameInput);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
                     });
                 } else {
-                    JOptionPane.showMessageDialog(null, "Enter your name");
+                    JOptionPane.showMessageDialog(null, "Please enter all fields.");
                 }
             }
         });
