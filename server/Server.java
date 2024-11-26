@@ -3,6 +3,7 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class Server {
     private static final int PORT = 3000;
@@ -16,6 +17,8 @@ public class Server {
     private static Iterator<PlayerHandler> playerIterator;
     private static int currentRound = 0;
     private static Map<String, Integer> playerScores = new HashMap<>();
+    private static ScheduledExecutorService roundTimer = Executors.newSingleThreadScheduledExecutor();
+    private static Future<?> currentRoundTask;
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -36,6 +39,8 @@ public class Server {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            roundTimer.shutdown(); // 서버 종료 시 타이머 종료
         }
     }
 
@@ -43,6 +48,7 @@ public class Server {
         if (currentRound >= TOTAL_ROUNDS) {
             broadcastMessage("MSG: The game has ended!");
             displayScores();
+            roundTimer.shutdown(); // 타이머 종료
             return;
         }
         currentRound++;
@@ -54,6 +60,15 @@ public class Server {
             selectNewWord();
             currentDrawer.sendMessage("MSG: Your word is: " + currentWord);
             broadcastMessageExcept(currentDrawer, "MSG: Round " + currentRound + " has started! " + currentDrawer.getName() + " is drawing.");
+
+            // 라운드 타이머 시작
+            if (currentRoundTask != null) {
+                currentRoundTask.cancel(true); // 이전 타이머 취소
+            }
+            currentRoundTask = roundTimer.schedule(() -> {
+                broadcastMessage("MSG: Time out! The correct word was: " + currentWord);
+                initiateNextRound(); // 다음 라운드 진행
+            }, 30, TimeUnit.SECONDS);
         }
     }
 
@@ -106,6 +121,12 @@ public class Server {
                         if (message.equalsIgnoreCase(currentWord)) {
                             broadcastMessage("MSG: " + playerName + " has guessed the word correctly! The word was: " + currentWord);
                             playerScores.put(playerName, playerScores.get(playerName) + 1);
+
+                            // 정답을 맞췄으므로 타이머 취소
+                            if (currentRoundTask != null) {
+                                currentRoundTask.cancel(true);
+                            }
+
                             initiateNextRound();
                         } else {
                             broadcastMessage("CHAT: " + playerName + ": " + message);
