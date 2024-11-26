@@ -24,15 +24,9 @@ public class GameScreen1 {
     private DrawingPanel drawingPanel; // 그림판
     
 
-    // MySQL 연결 정보
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/CatchmindDB";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "ekdud0412?";
-
     public GameScreen1(String username) {
         initialize(username);
-        fetchAndDisplayPlayerInfo(); // 데이터베이스에서 플레이어 정보를 가져와 표시
-        fetchRandomKeywordAndDisplay(); // 랜덤 키워드 가져와 표시
+        startListeningForKeyword(); // 서버로부터 제시어 수신 대기
         startTimer(); // 타이머 시작
     }
 
@@ -51,7 +45,7 @@ public class GameScreen1 {
         endButton.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
         frame.getContentPane().add(endButton);
 
-        // 게임 종료 버튼(유저 정보 삭제)
+        // 게임 종료 버튼(현재 창 닫기)
         endButton.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(
                 frame,
@@ -60,12 +54,8 @@ public class GameScreen1 {
                 JOptionPane.YES_NO_OPTION
             );
             if (confirm == JOptionPane.YES_OPTION) {
-            	// 데이터베이스에서 사용자 삭제
-                deleteUserFromDatabase(username);
+            	SocketManager.getInstance().closeConnection(); // 서버와 연결 종료
                 frame.dispose(); // 현재 창 닫기
-                EventQueue.invokeLater(() -> {
-                    new StartScreen(); // 시작 화면으로 돌아가기
-                });
             }
         });
         
@@ -191,8 +181,6 @@ public class GameScreen1 {
         selectedUserLabel.setHorizontalAlignment(SwingConstants.LEFT);
         roundInfoPanel.add(selectedUserLabel);
         
-        // 랜덤 유저 선택 및 round info에 출력
-        selectRandomUserAndDisplay();
         
         // 우측 중앙: 플레이어 정보 패널
         JPanel playerInfoPanel = new JPanel();
@@ -270,99 +258,18 @@ public class GameScreen1 {
     }
     
     
-    // 게임 종료시 DB에서 유저 정보 삭제
-    private void deleteUserFromDatabase(String username) {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            String sql = "DELETE FROM Users WHERE username = ?";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, username);
-            statement.executeUpdate();
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(frame, "Database error: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+    private void startListeningForKeyword() {
+        // 서버에서 제시어를 수신하고 UI에 업데이트
+        SocketManager.getInstance().setKeywordListener(this::setKeyword);
     }
     
-    // 랜덤 유저 선택
-    private void selectRandomUserAndDisplay() {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            // 랜덤으로 is_used가 false인 유저 1명 선택
-            String selectSql = "SELECT username FROM Users WHERE is_used = false ORDER BY RAND() LIMIT 1";
-            PreparedStatement selectStatement = connection.prepareStatement(selectSql);
-            ResultSet resultSet = selectStatement.executeQuery();
-
-            if (resultSet.next()) {
-                String selectedUser = resultSet.getString("username");
-                selectedUserLabel.setText("Painter: " + selectedUser);
-                
-                // 선택된 유저의 is_used를 true로 업데이트
-                String updateSql = "UPDATE Users SET is_used = true WHERE username = ?";
-                PreparedStatement updateStatement = connection.prepareStatement(updateSql);
-                updateStatement.setString(1, selectedUser);
-                updateStatement.executeUpdate();
-
-            } else {
-            	selectedUserLabel.setText("Painter: No available users");
-                JOptionPane.showMessageDialog(frame, "No users available for this round.");
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(frame, "Database error: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+    public void setKeyword(String keyword) {
+    	SwingUtilities.invokeLater(() -> {
+            keywordLabel.setText(" Keyword: " + keyword);
+        });
     }
     
-    // 데이터베이스에서 랜덤으로 키워드 가져오기
-    // 게임이 종료되면 is_used를 모두 false로 변경하는 코드 추가해야함
-    private void fetchRandomKeywordAndDisplay() {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            String sql = "SELECT keyword, hint FROM keyword WHERE is_used = false ORDER BY RAND() LIMIT 1";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            ResultSet resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-                String randomKeyword = resultSet.getString("keyword");
-                hint = resultSet.getString("hint");
-                
-                // 제시어를 keywordLabel에 표시
-                keywordLabel.setText(" Keyword: " + randomKeyword);
-
-                // is_used 업데이트
-                String updateSql = "UPDATE keyword SET is_used = true WHERE keyword = ?";
-                PreparedStatement updateStatement = connection.prepareStatement(updateSql);
-                updateStatement.setString(1, randomKeyword);
-                updateStatement.executeUpdate();
-            } else {
-                JOptionPane.showMessageDialog(frame, "사용 가능한 키워드가 없습니다!");
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(frame, "Database error: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
-
-
-    // 데이터베이스에서 플레이어 정보를 가져와 표시
-    private void fetchAndDisplayPlayerInfo() {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            String sql = "SELECT username, score FROM Users"; // Users 테이블에서 이름과 점수 가져오기
-            PreparedStatement statement = connection.prepareStatement(sql);
-            ResultSet resultSet = statement.executeQuery();
-
-            StringBuilder playerInfo = new StringBuilder("Player Info:\n");
-            while (resultSet.next()) {
-                String username = resultSet.getString("username");
-                int score = resultSet.getInt("score");
-                playerInfo.append(username).append(" - ").append(score).append("point\n");
-            }
-
-            playerInfoArea.setText(playerInfo.toString()); // 가져온 정보를 텍스트 영역에 표시
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(frame, "Database error: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
-
+    
     // 타이머 시작
     private void startTimer() {
         Timer timer = new Timer(1000, e -> {

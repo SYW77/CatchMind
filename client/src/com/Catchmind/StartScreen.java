@@ -5,20 +5,10 @@ import javax.swing.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 public class StartScreen {
 
     private JFrame frame;
-
-    // MySQL 연결 정보
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/CatchmindDB";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "ekdud0412?";
-
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
@@ -226,22 +216,4 @@ public class StartScreen {
         });
     }
 
-    // 데이터베이스에 유저 이름 저장 및 점수 초기화
-    private void saveUsernameToDatabase(String username) {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            // SQL INSERT 쿼리 (username과 score 삽입)
-            String sql = "INSERT INTO Users (username, score) VALUES (?, ?)";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, username);
-            statement.setInt(2, 0); // 초기 점수는 0으로 설정
-
-            int rowsInserted = statement.executeUpdate();
-            if (rowsInserted > 0) {
-                JOptionPane.showMessageDialog(null, "Start the game?\n(Username and score saved successfully.)");
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Database error: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
 }

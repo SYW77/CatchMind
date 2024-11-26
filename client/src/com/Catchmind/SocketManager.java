@@ -3,6 +3,7 @@ package com.Catchmind;
 import java.io.*;
 import java.net.*;
 import javax.swing.*;
+import java.util.function.Consumer;
 
 public class SocketManager {
     private static SocketManager instance; // 싱글톤
@@ -12,6 +13,8 @@ public class SocketManager {
 
     private String serverAddress;
     private int port;
+
+    private Consumer<String> keywordListener; // 제시어 수신 리스너
 
     private Thread listenerThread; // 수신 스레드
 
@@ -48,6 +51,10 @@ public class SocketManager {
         }
     }
 
+    public void setKeywordListener(Consumer<String> listener) {
+        this.keywordListener = listener;
+    }
+    
     public void sendNickname(String username) {
         if (out != null) {
             out.println(username + "\n"); // \n Terminating
@@ -85,6 +92,11 @@ public class SocketManager {
         } else if (message.startsWith("MSG:")) {
             String chatMessage = message.substring(4); // "MSG:" 이후 부분을 추출
             onReceiveMessage(chatMessage); // 일반 메시지 처리
+        } else if (message.startsWith("WORD:")) {
+            String keyword = message.substring(5); // "WORD:" 이후 부분을 추출
+            if (keywordListener != null) {
+                keywordListener.accept(keyword); // 키워드 리스너 호출
+            }
         }
     }
 

@@ -3,7 +3,6 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.*;
 
 public class Server {
     private static final int PORT = 3000;
@@ -58,7 +57,8 @@ public class Server {
         if (playerIterator.hasNext()) {
             currentDrawer = playerIterator.next();
             selectNewWord();
-            currentDrawer.sendMessage("MSG: Your word is: " + currentWord);
+            sendCurrentWordToDrawer(currentDrawer); // 출제자에게 제시어 전송
+            broadcastMessage("PAINTER:" + currentDrawer.getName()); // 출제자 정보를 모든 클라이언트에 브로드캐스트
             broadcastMessageExcept(currentDrawer, "MSG: Round " + currentRound + " has started! " + currentDrawer.getName() + " is drawing.");
 
             // 라운드 타이머 시작
@@ -89,6 +89,12 @@ public class Server {
 
         currentWord = availableWords.get(new Random().nextInt(availableWords.size()));
         usedWords.add(currentWord);
+    }
+
+    private static void sendCurrentWordToDrawer(PlayerHandler drawer) {
+        if (drawer != null) {
+            drawer.sendMessage("WORD:" + currentWord);
+        }
     }
 
     private static void displayScores() {
