@@ -257,8 +257,7 @@ public class GameScreen1 {
                 JOptionPane.showMessageDialog(frame, "답변을 입력해주세요.");
             }
         });
-
-        // Enter 키를 누르면 제출 버튼의 ActionListener 실행
+     // Enter 키를 누르면 제출 버튼의 ActionListener 실행
         answerField.addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
             public void keyPressed(java.awt.event.KeyEvent e) {
@@ -267,7 +266,6 @@ public class GameScreen1 {
                 }
             }
         });
-
         frame.setVisible(true);
     }
     
@@ -370,35 +368,42 @@ public class GameScreen1 {
         Timer timer = new Timer(1000, e -> {
             if (timeRemaining > 0) {
                 timerLabel.setText("Remaining Time: " + timeRemaining + "sec");
-                
+
                 int totalTime = 30; // 전체 제한 시간
-                // 타이머 패널 크기 조정
-                int panelWidth = (int) ((timeRemaining / (double) totalTime) * 720); // 패널 너비 계산
+                int panelWidth = (int) ((timeRemaining / (double) totalTime) * 720);
                 timerPanel.setBounds(20, 370, panelWidth, 35);
-                
+
                 if (timeRemaining == 10) {
                     hintLabel.setText("Hint: " + hint); // 힌트를 표시
                     hintLabel.setVisible(true); // 힌트를 보이도록 설정
+
+                    // 막대 색상과 텍스트 색상 변경
+                    timerPanel.setBackground(Color.RED); // 막대를 빨간색으로 변경
+                    timerLabel.setForeground(Color.WHITE); // 텍스트를 흰색으로 변경
                 }
-                
+
                 timeRemaining--;
             } else {
                 ((Timer) e.getSource()).stop(); // 타이머 중지
                 JOptionPane.showMessageDialog(frame, "Time End.");
-                
-                // 다음 라운드로 이동
+
                 moveToNextRound();
             }
         });
         timer.start();
     }
+
     
     private void moveToNextRound() {
         selectRandomUserAndDisplay(); // 새로운 출제자 선택
         fetchRandomKeywordAndDisplay(); // 새로운 키워드 선택
         hintLabel.setVisible(false); // 힌트를 숨김
+
+        // 타이머 색상 초기화
+        timerPanel.setBackground(new Color(200, 220, 255)); // 기본 색상으로 변경
+        timerLabel.setForeground(Color.BLACK); // 텍스트 색상을 검정으로 변경
+
         timeRemaining = 30; // 타이머 초기화
         startTimer(); // 타이머 재시작
     }
-    
 }
