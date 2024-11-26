@@ -57,7 +57,7 @@ public class StartScreen {
         
         // 사용자 이름 입력 필드
         JTextField username = new JTextField();
-        username.setBounds(250, 200, 300, 40);
+        username.setBounds(250, 170, 300, 40);
         username.setFont(new Font("맑은 고딕", Font.PLAIN, 18));
         username.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -98,10 +98,53 @@ public class StartScreen {
         frame.getContentPane().add(username);
 		
         
+        // 호스트 이름 입력 필드
+        JTextField hostName = new JTextField();
+        hostName.setBounds(250, 220, 300, 40);
+        hostName.setFont(new Font("맑은 고딕", Font.PLAIN, 18));
+        hostName.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // 기본 텍스트 및 색상 설정
+        hostName.setText("Enter host name");
+        hostName.setForeground(Color.GRAY);
+
+        // KeyListener로 사용자 입력 처리
+        hostName.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                // 기본 텍스트가 표시된 상태에서 첫 입력 시 기본 텍스트 제거
+                if (hostName.getText().equals("Enter host name")) {
+                	hostName.setText(""); // 기본 텍스트 제거
+                	hostName.setForeground(Color.BLACK); // 입력 텍스트 색상을 검정으로 변경
+                }
+            }
+        });
+
+        // FocusListener로 기본 텍스트 복원 처리
+        hostName.addFocusListener(new java.awt.event.FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // 포커스를 얻으면 아무 작업도 하지 않음 (KeyListener가 처리함)
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                // 텍스트 필드가 비어 있으면 기본 텍스트 복원
+                if (hostName.getText().trim().isEmpty()) {
+                	hostName.setText("Enter host name");
+                	hostName.setForeground(Color.GRAY); // 기본 텍스트 색상 복원
+                }
+            }
+        });
+
+        // 텍스트 필드 추가
+        frame.getContentPane().add(hostName);
+		
+        
         
         // 포트 번호 입력 필드
         JTextField portNum = new JTextField();
-        portNum.setBounds(250, 250, 300, 40);
+        portNum.setBounds(250, 270, 300, 40);
         portNum.setFont(new Font("맑은 고딕", Font.PLAIN, 18));
         portNum.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -145,7 +188,7 @@ public class StartScreen {
         
         // 시작 버튼
         JButton loginBtn = new JButton("Start");
-        loginBtn.setBounds(350, 310, 100, 40);
+        loginBtn.setBounds(351, 330, 100, 40);
         loginBtn.setFont(new Font("맑은 고딕", Font.BOLD, 20));
         frame.getContentPane().add(loginBtn);
         
