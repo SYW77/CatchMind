@@ -367,7 +367,18 @@ public class GameScreen1 {
     private void startTimer() {
         Timer timer = new Timer(1000, e -> {
             if (timeRemaining > 0) {
-                timerLabel.setText("Remaining Time: " + timeRemaining + "sec");
+                // 3초 이하: "sec" 제거
+                if (timeRemaining <= 3) {
+                    timerLabel.setText(String.valueOf(timeRemaining));
+                }
+                // 7초 이하: "Remaining Time:" 제거
+                else if (timeRemaining <= 7) {
+                    timerLabel.setText(timeRemaining + " sec");
+                }
+                // 기본 텍스트
+                else {
+                    timerLabel.setText("Remaining Time: " + timeRemaining + " sec");
+                }
 
                 int totalTime = 30; // 전체 제한 시간
                 int panelWidth = (int) ((timeRemaining / (double) totalTime) * 720);
@@ -392,8 +403,6 @@ public class GameScreen1 {
         });
         timer.start();
     }
-
-    
     private void moveToNextRound() {
         selectRandomUserAndDisplay(); // 새로운 출제자 선택
         fetchRandomKeywordAndDisplay(); // 새로운 키워드 선택
@@ -402,6 +411,9 @@ public class GameScreen1 {
         // 타이머 색상 초기화
         timerPanel.setBackground(new Color(200, 220, 255)); // 기본 색상으로 변경
         timerLabel.setForeground(Color.BLACK); // 텍스트 색상을 검정으로 변경
+
+        // 타이머 텍스트 초기화
+        timerLabel.setText("Remaining Time: 30 sec");
 
         timeRemaining = 30; // 타이머 초기화
         startTimer(); // 타이머 재시작
