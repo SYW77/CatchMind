@@ -69,6 +69,12 @@ public class Server {
                 broadcastMessage("MSG: Time out! The correct word was: " + currentWord);
                 initiateNextRound(); // 다음 라운드 진행
             }, 30, TimeUnit.SECONDS);
+            
+            // 20초 후 힌트 방송 (남은 시간 10초일 때)
+            roundTimer.schedule(() -> {
+                showHint(currentWord);
+            }, 20, TimeUnit.SECONDS);
+            
         }
     }
 
@@ -187,4 +193,16 @@ public class Server {
             }
         }
     }
+    
+    private static void showHint(String currentWord) {
+    	int count;
+    	count = currentWord.length();
+    	String outputString = "";
+    	for(int i=0;i<count;i++) {
+    		outputString+="*";
+    	}
+    	broadcastMessage("MSG: "+outputString);
+    }
+    
+    
 }
