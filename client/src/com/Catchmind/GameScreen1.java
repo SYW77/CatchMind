@@ -258,6 +258,16 @@ public class GameScreen1 {
             }
         });
 
+        // Enter 키를 누르면 제출 버튼의 ActionListener 실행
+        answerField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    submitButton.doClick();
+                }
+            }
+        });
+
         frame.setVisible(true);
     }
     
