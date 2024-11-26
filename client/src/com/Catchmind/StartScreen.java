@@ -197,7 +197,7 @@ public class StartScreen {
         loginBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String userNameInput = username.getText();
-                String serverInput = "localhost"; //serverAddress.getText();
+                String serverInput = hostName.getText();
                 String portInput = portNum.getText();
 
                 if (!userNameInput.isEmpty() && !userNameInput.equals("Enter your name") &&
