@@ -160,8 +160,10 @@ public class Server {
 
         public void sendMessage(String message) {
             try {
-                out.write(message + "\n");
-                out.flush();
+                if (out != null) {
+                    out.write(message + "\n");
+                    out.flush();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
