@@ -154,7 +154,8 @@ public class GameScreen1 {
         
 
         // 중앙: 그림 표시 패널
-        drawingPanel = new DrawingPanel(lines, currentColor);
+
+        drawingPanel = DrawingPanel.getInstance(lines, currentColor);
         drawingPanel.setBounds(20, 60, 500, 252);
         drawingPanel.setBackground(new Color(255, 255, 255));
         // 패널에 테두리 추가 (검정색 테두리, 두께 2)
