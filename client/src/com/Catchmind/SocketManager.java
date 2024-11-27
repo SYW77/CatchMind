@@ -95,6 +95,9 @@ public class SocketManager {
         } else if (message.startsWith("Timer:")) {
         	String timer = message.substring(6);
         	onReceiveTimer(timer); // 타이머 메시지 처리
+        } else if (message.startsWith("Hint:")) {
+        	String hint = message.substring(5);
+        	onReceiveHint(hint);
         } else if (message.startsWith("WORD:")) {
             String keyword = message.substring(5); // "WORD:" 이후 부분을 추출
             onReceiveWord(keyword);
@@ -102,6 +105,13 @@ public class SocketManager {
                 keywordListener.accept(keyword); // 키워드 리스너 호출
             }
         }
+    }
+    
+    // 힌트를 받았을 때 호출되는 메서드
+    private static void onReceiveHint(String hint) {
+    	SwingUtilities.invokeLater(() -> {
+    		GameScreen1.setHint(hint);
+    	});
     }
 
     // 타이머 메시지를 받았을 때 호출되는 메서드(타이머 시작)

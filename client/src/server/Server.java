@@ -212,7 +212,7 @@ public class Server {
     	for(int i=0;i<count;i++) {
     		outputString+="*";
     	}
-    	broadcastMessage("MSG: "+outputString);
+    	broadcastMessage("Hint: "+outputString);
     }
     
     

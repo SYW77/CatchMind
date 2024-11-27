@@ -310,8 +310,13 @@ public class GameScreen1 {
         });
         timer.start();
     }
+    
+    public static void setHint(String newHint) {
+        hint = newHint; // hint에 값을 설정
+    }
+    
     public static void moveToNextRound() {
-        hintLabel.setVisible(false); // 힌트를 숨김
+    	hintLabel.setText("Hint: "); // 힌트를 숨김
 
         // 타이머 색상 초기화
         timerPanel.setBackground(new Color(200, 220, 255)); // 기본 색상으로 변경
