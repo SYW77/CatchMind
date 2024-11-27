@@ -63,6 +63,7 @@ public class Server {
             broadcastMessageExcept(currentDrawer, "MSG: Round " + currentRound + " has started! " + currentDrawer.getName() + " is drawing.");
 
             // 라운드 타이머 시작
+            broadcastMessage("Timer: Timer has started!");
             if (currentRoundTask != null) {
                 currentRoundTask.cancel(true); // 이전 타이머 취소
             }

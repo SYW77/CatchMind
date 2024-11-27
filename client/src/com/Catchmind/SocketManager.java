@@ -92,6 +92,9 @@ public class SocketManager {
         } else if (message.startsWith("MSG:")) {
             String chatMessage = message.substring(4); // "MSG:" 이후 부분을 추출
             onReceiveMessage(chatMessage); // 일반 메시지 처리
+        } else if (message.startsWith("Timer:")) {
+        	String timer = message.substring(6);
+        	onReceiveTimer(timer); // 타이머 메시지 처리
         } else if (message.startsWith("WORD:")) {
             String keyword = message.substring(5); // "WORD:" 이후 부분을 추출
             onReceiveWord(keyword);
@@ -101,10 +104,17 @@ public class SocketManager {
         }
     }
 
+    // 타이머 메시지를 받았을 때 호출되는 메서드(타이머 시작)
+    private static void onReceiveTimer(String timer) {
+    	SwingUtilities.invokeLater(() -> {
+    		GameScreen1.startTimer();
+    	});
+    }
+    
     // 키워드를 받았을 때 호출되는 메서드(출제자에게 전달)
     private void onReceiveWord(String keyword) {
     	SwingUtilities.invokeLater(() -> {
-    		GameScreen1.setKeyword(keyword); // GameScreen1 인스턴스를 통해 키워드 업데이트
+    		GameScreen1.setKeyword(keyword); // 키워드 업데이트
     	});
     }
     

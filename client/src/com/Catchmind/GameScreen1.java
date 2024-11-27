@@ -8,16 +8,16 @@ import java.util.List;
 
 public class GameScreen1 {
 
-	private JFrame frame;
+	private static JFrame frame;
     private JTextArea playerInfoArea; // 플레이어 정보를 표시할 텍스트 영역
     private static JLabel keywordLabel; // 제시어를 표시할 라벨
-    private JLabel hintLabel; // 힌트를 표시할 라벨
-    private String hint; // 힌트를 저장할 변수
+    private static JLabel hintLabel; // 힌트를 표시할 라벨
+    private static String hint; // 힌트를 저장할 변수
     private JLabel selectedUserLabel; // 출제자를 표시할 라벨
     private String selectedUser; // 출제자를 저장할 변수
-    private JLabel timerLabel; // 타이머를 표시할 라벨
-    private JPanel timerPanel; // 타이머 패널
-    private int timeRemaining = 30; // 제한 시간 (초)
+    private static JLabel timerLabel; // 타이머를 표시할 라벨
+    private static JPanel timerPanel; // 타이머 패널
+    private static int timeRemaining = 30; // 제한 시간 (초)
     private Color currentColor = Color.BLACK; // 현재 선택된 색상
     private List<Line> lines = new ArrayList<>(); // 그림 데이터를 저장
     private DrawingPanel drawingPanel; // 그림판
@@ -26,8 +26,7 @@ public class GameScreen1 {
 
     public GameScreen1(String username) {
         initialize(username);
-        //startListeningForKeyword(); // 서버로부터 제시어 수신 대기
-        startTimer(); // 타이머 시작
+        
     }
 
     private void initialize(String username) {
@@ -272,7 +271,7 @@ public class GameScreen1 {
     
     
     // 타이머 시작
-    private void startTimer() {
+    public static void startTimer() {
         Timer timer = new Timer(1000, e -> {
             if (timeRemaining > 0) {
                 // 3초 이하: "sec" 제거
@@ -311,9 +310,7 @@ public class GameScreen1 {
         });
         timer.start();
     }
-    private void moveToNextRound() {
-        //selectRandomUserAndDisplay(); // 새로운 출제자 선택
-        //fetchRandomKeywordAndDisplay(); // 새로운 키워드 선택
+    public static void moveToNextRound() {
         hintLabel.setVisible(false); // 힌트를 숨김
 
         // 타이머 색상 초기화
