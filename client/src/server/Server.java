@@ -3,12 +3,13 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 public class Server {
     private static final int PORT = 3000;
-    private static final int MAX_PLAYERS = 5;
-    private static final int TOTAL_ROUNDS = 10;
-    private static Set<PlayerHandler> playerHandlers = new HashSet<>();
+    private static final int MAX_PLAYERS = 2;
+    private static final int TOTAL_ROUNDS = 2;
+    private static Set<PlayerHandler> playerHandlers = new CopyOnWriteArraySet<>();
     private static List<String> wordList = new ArrayList<>(Arrays.asList("apple", "banana", "cat", "dog", "elephant"));
     private static Set<String> usedWords = new HashSet<>();
     private static String currentWord;
@@ -22,7 +23,7 @@ public class Server {
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Game server started on port " + PORT);
-
+            
             while (true) {
                 if (playerHandlers.size() < MAX_PLAYERS) {
                     Socket playerSocket = serverSocket.accept();
@@ -121,8 +122,9 @@ public class Server {
                 out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                sendMessage("MSG: Welcome to the game! Please enter your name:");
+                sendMessage("MSG: Welcome to the game!");
                 playerName = in.readLine();
+                System.out.println(playerName + "has connected");
                 broadcastMessage("MSG: " + playerName + " has joined the game! Current players: " + playerHandlers.size());
                 playerScores.put(playerName, 0);
 

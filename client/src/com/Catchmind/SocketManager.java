@@ -94,12 +94,20 @@ public class SocketManager {
             onReceiveMessage(chatMessage); // 일반 메시지 처리
         } else if (message.startsWith("WORD:")) {
             String keyword = message.substring(5); // "WORD:" 이후 부분을 추출
+            onReceiveWord(keyword);
             if (keywordListener != null) {
                 keywordListener.accept(keyword); // 키워드 리스너 호출
             }
         }
     }
 
+    // 키워드를 받았을 때 호출되는 메서드(출제자에게 전달)
+    private void onReceiveWord(String keyword) {
+    	SwingUtilities.invokeLater(() -> {
+    		GameScreen1.setKeyword(keyword); // GameScreen1 인스턴스를 통해 키워드 업데이트
+    	});
+    }
+    
     // 그림을 받았을 때 호출되는 메서드
     private void onReceiveDrawing(String base64Drawing) {
         // `DrawingPanel`에 그림을 표시하기 위해 메서드를 호출

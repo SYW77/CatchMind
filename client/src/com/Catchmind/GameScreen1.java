@@ -2,7 +2,6 @@ package com.Catchmind;
 
 import java.awt.*;
 import javax.swing.*;
-import java.sql.*;
 import javax.swing.border.LineBorder;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +10,7 @@ public class GameScreen1 {
 
 	private JFrame frame;
     private JTextArea playerInfoArea; // 플레이어 정보를 표시할 텍스트 영역
-    private JLabel keywordLabel; // 제시어를 표시할 라벨
+    private static JLabel keywordLabel; // 제시어를 표시할 라벨
     private JLabel hintLabel; // 힌트를 표시할 라벨
     private String hint; // 힌트를 저장할 변수
     private JLabel selectedUserLabel; // 출제자를 표시할 라벨
@@ -22,11 +21,12 @@ public class GameScreen1 {
     private Color currentColor = Color.BLACK; // 현재 선택된 색상
     private List<Line> lines = new ArrayList<>(); // 그림 데이터를 저장
     private DrawingPanel drawingPanel; // 그림판
+    private static JPanel toolPanel;
     
 
     public GameScreen1(String username) {
         initialize(username);
-        startListeningForKeyword(); // 서버로부터 제시어 수신 대기
+        //startListeningForKeyword(); // 서버로부터 제시어 수신 대기
         startTimer(); // 타이머 시작
     }
 
@@ -87,10 +87,11 @@ public class GameScreen1 {
         hintPanel.add(hintLabel);
 
         // 그림판 툴 영역
-        JPanel toolPanel = new JPanel();
+        toolPanel = new JPanel();
         toolPanel.setBounds(232, 20, 288, 30);
         toolPanel.setBackground(new Color(255, 255, 255));
         frame.getContentPane().add(toolPanel);
+        toolPanel.setVisible(false);
         toolPanel.setLayout(null);
 
         // 그림판 툴 버튼들
@@ -137,9 +138,6 @@ public class GameScreen1 {
         });
         
         
-        // 출제자인 경우
-        // keywordLabel.setVisible(true);
-        // toolPanel.setVisible(true);
         
         
 
@@ -168,7 +166,7 @@ public class GameScreen1 {
         roundInfoPanel.setLayout(null);
         
         // 라운드를 표시하는 텍스트 영역
-        JLabel roundLabel = new JLabel("Round");
+        JLabel roundLabel = new JLabel("  Round");
         roundLabel.setBounds(0, 0, 200, 24);
         roundLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
         roundLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -258,14 +256,17 @@ public class GameScreen1 {
     }
     
     
-    private void startListeningForKeyword() {
-        // 서버에서 제시어를 수신하고 UI에 업데이트
-        SocketManager.getInstance().setKeywordListener(this::setKeyword);
+    public static void showTool() {
+        toolPanel.setVisible(true);
     }
     
-    public void setKeyword(String keyword) {
-    	SwingUtilities.invokeLater(() -> {
-            keywordLabel.setText(" Keyword: " + keyword);
+    
+    public static void setKeyword(String keyword) {
+        SwingUtilities.invokeLater(() -> {
+            if (keywordLabel != null) {
+                keywordLabel.setText(" Keyword: " + keyword);
+                showTool();
+            }
         });
     }
     
@@ -311,8 +312,8 @@ public class GameScreen1 {
         timer.start();
     }
     private void moveToNextRound() {
-        selectRandomUserAndDisplay(); // 새로운 출제자 선택
-        fetchRandomKeywordAndDisplay(); // 새로운 키워드 선택
+        //selectRandomUserAndDisplay(); // 새로운 출제자 선택
+        //fetchRandomKeywordAndDisplay(); // 새로운 키워드 선택
         hintLabel.setVisible(false); // 힌트를 숨김
 
         // 타이머 색상 초기화
