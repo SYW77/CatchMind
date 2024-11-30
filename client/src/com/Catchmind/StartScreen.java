@@ -93,89 +93,56 @@ public class StartScreen {
         hostName.setBounds(250, 220, 300, 40);
         hostName.setFont(new Font("맑은 고딕", Font.PLAIN, 18));
         hostName.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // 기본 텍스트 및 색상 설정
-        hostName.setText("Enter host name");
-        hostName.setForeground(Color.GRAY);
-
-        // KeyListener로 사용자 입력 처리
-        hostName.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
-                // 기본 텍스트가 표시된 상태에서 첫 입력 시 기본 텍스트 제거
-                if (hostName.getText().equals("Enter host name")) {
-                	hostName.setText(""); // 기본 텍스트 제거
-                	hostName.setForeground(Color.BLACK); // 입력 텍스트 색상을 검정으로 변경
-                }
-            }
-        });
-
-        // FocusListener로 기본 텍스트 복원 처리
-        hostName.addFocusListener(new java.awt.event.FocusListener() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                // 포커스를 얻으면 아무 작업도 하지 않음 (KeyListener가 처리함)
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                // 텍스트 필드가 비어 있으면 기본 텍스트 복원
-                if (hostName.getText().trim().isEmpty()) {
-                	hostName.setText("Enter host name");
-                	hostName.setForeground(Color.GRAY); // 기본 텍스트 색상 복원
-                }
-            }
-        });
-
-        // 텍스트 필드 추가
+        hostName.setText("localhost");
+        hostName.setForeground(Color.BLACK);
         frame.getContentPane().add(hostName);
-		
-        
-        
+
         // 포트 번호 입력 필드
         JTextField portNum = new JTextField();
         portNum.setBounds(250, 270, 300, 40);
         portNum.setFont(new Font("맑은 고딕", Font.PLAIN, 18));
         portNum.setHorizontalAlignment(SwingConstants.CENTER);
+        portNum.setText("3000");
+        portNum.setForeground(Color.BLACK);
+        frame.getContentPane().add(portNum);
 
-        // 기본 텍스트 및 색상 설정
-        portNum.setText("Enter the port number");
-        portNum.setForeground(Color.GRAY);
-
-        // KeyListener로 사용자 입력 처리
-        portNum.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
-                // 기본 텍스트가 표시된 상태에서 첫 입력 시 기본 텍스트 제거
-                if (portNum.getText().equals("Enter the port number")) {
-                	portNum.setText(""); // 기본 텍스트 제거
-                	portNum.setForeground(Color.BLACK); // 입력 텍스트 색상을 검정으로 변경
-                }
-            }
-        });
-
-        // FocusListener로 기본 텍스트 복원 처리
-        portNum.addFocusListener(new java.awt.event.FocusListener() {
+        // FocusListener 수정
+        hostName.addFocusListener(new java.awt.event.FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                // 포커스를 얻으면 아무 작업도 하지 않음 (KeyListener가 처리함)
+                // 기본값이면 선택
+                if (hostName.getText().equals("localhost")) {
+                    hostName.selectAll();
+                }
             }
 
             @Override
             public void focusLost(FocusEvent e) {
-                // 텍스트 필드가 비어 있으면 기본 텍스트 복원
-                if (portNum.getText().trim().isEmpty()) {
-                	portNum.setText("Enter the port number");
-                	portNum.setForeground(Color.GRAY); // 기본 텍스트 색상 복원
+                // 비어있으면 기본값 복원
+                if (hostName.getText().trim().isEmpty()) {
+                    hostName.setText("localhost");
                 }
             }
         });
 
-        // 텍스트 필드 추가
-        frame.getContentPane().add(portNum);
-		
-        
-        
+        portNum.addFocusListener(new java.awt.event.FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // 기본값이면 선택
+                if (portNum.getText().equals("3000")) {
+                    portNum.selectAll();
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                // 비어있으면 기본값 복원
+                if (portNum.getText().trim().isEmpty()) {
+                    portNum.setText("3000");
+                }
+            }
+        });
+
         // 시작 버튼
         JButton loginBtn = new JButton("Start");
         loginBtn.setBounds(351, 330, 100, 40);
