@@ -8,6 +8,8 @@ import java.util.Base64;
 import java.util.zip.GZIPInputStream;
 import java.util.List;
 import java.awt.Color;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SocketManager {
     private static SocketManager instance; // 싱글톤
@@ -155,6 +157,9 @@ public class SocketManager {
             onGameStart();
         } else if (message.equals("GAME_END")) {
             onGameEnd();
+        } else if (message.startsWith("SCORES:")) {
+            String scoresJson = message.substring(7);
+            onReceiveScores(scoresJson);
         }
     }
 
@@ -285,6 +290,30 @@ public class SocketManager {
         SwingUtilities.invokeLater(() -> {
             GameScreen1.showGameEnded();
         });
+    }
+
+    private void onReceiveScores(String scoresJson) {
+        try {
+            // JSON 파싱 (간단한 구현)
+            scoresJson = scoresJson.substring(1, scoresJson.length() - 1); // {} 제거
+            Map<String, Integer> scores = new HashMap<>();
+
+            if (!scoresJson.isEmpty()) {
+                String[] entries = scoresJson.split(",");
+                for (String entry : entries) {
+                    String[] parts = entry.split(":");
+                    String name = parts[0].replace("\"", "");
+                    int score = Integer.parseInt(parts[1]);
+                    scores.put(name, score);
+                }
+            }
+
+            SwingUtilities.invokeLater(() -> {
+                GameScreen1.updateLeaderboard(scores);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void closeConnection() {

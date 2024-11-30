@@ -62,7 +62,6 @@ public class Server {
         if (currentRound >= TOTAL_ROUNDS) {
             broadcastMessage("MSG: The game has ended!");
             broadcastMessage("GAME_END");
-            displayScores();
             roundTimer.shutdown();
             return;
         }
@@ -87,6 +86,7 @@ public class Server {
             }
             startTimer();
         }
+        broadcastScores();
     }
 
     private static void selectNewWord() {
@@ -102,12 +102,21 @@ public class Server {
         usedWords.add(currentWord);
     }
 
-    private static void displayScores() {
-        StringBuilder scoreMessage = new StringBuilder("MSG: Final scores:\n");
+    private static void broadcastScores() {
+        StringBuilder scoresJson = new StringBuilder("SCORES:");
+        scoresJson.append("{");
+        boolean first = true;
         for (Map.Entry<String, Integer> entry : playerScores.entrySet()) {
-            scoreMessage.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            if (!first) {
+                scoresJson.append(",");
+            }
+            scoresJson.append("\"").append(entry.getKey()).append("\":")
+                    .append(entry.getValue());
+            first = false;
         }
-        broadcastMessage(scoreMessage.toString());
+        scoresJson.append("}");
+        
+        broadcastMessage(scoresJson.toString());
     }
 
     private static class PlayerHandler implements Runnable {
@@ -130,7 +139,9 @@ public class Server {
                 playerName = in.readLine();
                 System.out.println(playerName + "has connected");
                 broadcastMessage("MSG: " + playerName + " has joined the game! Current players: " + playerHandlers.size());
+                
                 playerScores.put(playerName, 0);
+                broadcastScores();
 
                 String input;
                 while ((input = in.readLine()) != null) {
@@ -139,7 +150,8 @@ public class Server {
                         if (message.equalsIgnoreCase(currentWord)) {
                             broadcastMessage("MSG:" + playerName + " has guessed the word correctly! The word was: " + currentWord);
                             playerScores.put(playerName, playerScores.get(playerName) + 1);
-
+                            broadcastScores();
+                            
                             if (currentRoundTask != null) {
                                 currentRoundTask.cancel(true);
                             }
@@ -169,7 +181,9 @@ public class Server {
                     e.printStackTrace();
                 }
                 playerHandlers.remove(this);
+                playerScores.remove(playerName);
                 broadcastMessage("MSG: A player has left the game. Current players: " + playerHandlers.size());
+                broadcastScores();
                 if (currentDrawer == this) {
                     initiateNextRound();
                 }

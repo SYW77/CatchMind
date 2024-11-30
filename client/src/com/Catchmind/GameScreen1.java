@@ -13,6 +13,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.*;
+import java.util.Map;
 
 public class GameScreen1 {
 
@@ -442,6 +443,33 @@ public class GameScreen1 {
             timerPanel.setBackground(TIMER_NORMAL_COLOR);
             timerLabel.setForeground(Color.BLACK);
             updateTimer(30);
+        });
+    }
+
+    // 리더보드 업데이트 메서드 추가
+    public static void updateLeaderboard(Map<String, Integer> scores) {
+        SwingUtilities.invokeLater(() -> {
+            if (playerInfoArea != null) {
+                StringBuilder leaderboard = new StringBuilder();
+                
+                // 점수를 기준으로 정렬하기 위해 리스트로 변환
+                List<Map.Entry<String, Integer>> sortedScores = new ArrayList<>(scores.entrySet());
+                sortedScores.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+                
+                for (Map.Entry<String, Integer> entry : sortedScores) {
+                    String playerName = entry.getKey();
+                    int score = entry.getValue();
+                    
+                    // 현재 플레이어는 강조 표시
+                    if (playerName.equals(myName)) {
+                        leaderboard.append("▶ ").append(playerName).append(": ").append(score).append("\n");
+                    } else {
+                        leaderboard.append("   ").append(playerName).append(": ").append(score).append("\n");
+                    }
+                }
+                
+                playerInfoArea.setText(leaderboard.toString());
+            }
         });
     }
 }
