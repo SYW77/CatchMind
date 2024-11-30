@@ -5,6 +5,14 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.*;
 
 public class GameScreen1 {
 
@@ -20,8 +28,9 @@ public class GameScreen1 {
     private static int timeRemaining = 30; // 제한 시간 (초)
     private Color currentColor = Color.BLACK; // 현재 선택된 색상
     private List<Line> lines = new ArrayList<>(); // 그림 데이터를 저장
-    private DrawingPanel drawingPanel; // 그림판
+    private DrawingPanel drawingPanel; // 림판
     private static JPanel toolPanel;
+    private static JTextPane chatArea; // JTextPane으로 변경
     
 
     public GameScreen1(String username) {
@@ -204,11 +213,50 @@ public class GameScreen1 {
         frame.getContentPane().add(chatPanel);
         chatPanel.setLayout(null);
 
-        JLabel chatLabel = new JLabel("Chat");
-        chatLabel.setBounds(0, 0, 200, 140);
-        chatLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
-        chatLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        chatPanel.add(chatLabel);
+        // 채팅 메시지를 표시할 텍스트 영역
+        chatArea = new JTextPane(); // JTextPane으로 생성
+        chatArea.setEditable(false);
+        chatArea.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        ((StyledDocument) chatArea.getDocument()).setParagraphAttributes(0, 0, new SimpleAttributeSet(), true);
+
+        // 스크롤 패널에 텍스트 영역 추가
+        JScrollPane chatScrollPane = new JScrollPane(chatArea);
+        chatScrollPane.setBounds(0, 0, 200, 100);
+        chatPanel.add(chatScrollPane);
+
+        // 채팅 입력 필드
+        JTextField chatField = new JTextField();
+        chatField.setBounds(0, 100, 140, 26);
+        chatField.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        chatPanel.add(chatField);
+
+        // 전송 버튼
+        JButton sendButton = new JButton("Send");
+        sendButton.setBounds(140, 100, 60, 26);
+        sendButton.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        chatPanel.add(sendButton);
+
+        // 채팅 전송 기능
+        ActionListener sendChatAction = e -> {
+            String message = chatField.getText().trim();
+            if (!message.isEmpty()) {
+                SocketManager.getInstance().sendChat(message);
+                chatField.setText("");
+            }
+        };
+
+        // 전송 버튼 클릭 이벤트
+        sendButton.addActionListener(sendChatAction);
+
+        // Enter 키 입력 이벤트
+        chatField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    sendChatAction.actionPerformed(null);
+                }
+            }
+        });
 
         // 하단: 타이머 및 답변 입력 영역
         timerPanel = new JPanel();
@@ -223,34 +271,6 @@ public class GameScreen1 {
         timerPanel.setLayout(new BorderLayout());
         timerPanel.add(timerLabel, BorderLayout.CENTER);
 
-        // 답변 입력 필드와 제출 버튼
-        JTextField answerField = new JTextField();
-        answerField.setBounds(20, 420, 600, 30);
-        frame.getContentPane().add(answerField);
-
-        JButton submitButton = new JButton("Submit");
-        submitButton.setBounds(640, 420, 100, 30);
-        submitButton.setFont(new Font("맑은 고딕", Font.PLAIN, 14));
-        frame.getContentPane().add(submitButton);
-
-        submitButton.addActionListener(e -> {
-            String answer = answerField.getText();
-            if (!answer.isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "제출한 답변: " + answer);
-                answerField.setText("");
-            } else {
-                JOptionPane.showMessageDialog(frame, "답변을 입력해주세요.");
-            }
-        });
-     // Enter 키를 누르면 제출 버튼의 ActionListener 실행
-        answerField.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyPressed(java.awt.event.KeyEvent e) {
-                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
-                    submitButton.doClick();
-                }
-            }
-        });
         frame.setVisible(true);
     }
     
@@ -327,5 +347,51 @@ public class GameScreen1 {
 
         timeRemaining = 30; // 타이머 초기화
         startTimer(); // 타이머 재시작
+    }
+
+    // 채팅 메시지 추가 메서드를 클래스 레벨로 이동
+    public static void addChatMessage(String message) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatArea != null) {
+                // 일반 채팅 메시지용 스타일 (검정색)
+                SimpleAttributeSet attrs = new SimpleAttributeSet();
+                StyleConstants.setForeground(attrs, Color.BLACK);
+                
+                // Document 가져오기
+                StyledDocument doc = (StyledDocument) chatArea.getDocument();
+                
+                try {
+                    // 검정색 텍스트 추가
+                    doc.insertString(doc.getLength(), message + "\n", attrs);
+                    // 자동 스크롤
+                    chatArea.setCaretPosition(doc.getLength());
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    // 시스템 메시지 추가 메서드 (빨간색으로 표시)
+    public static void addSystemMessage(String message) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatArea != null) {
+                // 현재 스타일 저장
+                SimpleAttributeSet attrs = new SimpleAttributeSet();
+                StyleConstants.setForeground(attrs, Color.RED);
+                
+                // Document 가져오기
+                StyledDocument doc = (StyledDocument) chatArea.getDocument();
+                
+                try {
+                    // 빨간색 텍스트 추가
+                    doc.insertString(doc.getLength(), message + "\n", attrs);
+                    // 자동 스크롤
+                    chatArea.setCaretPosition(doc.getLength());
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }

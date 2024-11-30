@@ -86,6 +86,13 @@ public class SocketManager {
         }
     }
 
+    // 채팅 메시지 전송
+    public void sendChat(String message) {
+        if (out != null) {
+            out.println("CHAT:" + message);
+        }
+    }
+
     private void startListening() {
         listenerThread = new Thread(() -> {
             try {
@@ -129,6 +136,9 @@ public class SocketManager {
             if (keywordListener != null) {
                 keywordListener.accept(keyword); // 키워드 리스너 호출
             }
+        } else if (message.startsWith("CHAT:")) {
+            String chatMessage = message.substring(5);
+            onReceiveChat(chatMessage);
         }
     }
 
@@ -157,6 +167,8 @@ public class SocketManager {
     private void onReceiveMessage(String message) {
         SwingUtilities.invokeLater(() -> {
             System.out.println("Received message: " + message);
+            // 시스템 메시지도 채팅창에 표시 (빨간색으로)
+            GameScreen1.addSystemMessage(message);
         });
     }
 
@@ -221,6 +233,13 @@ public class SocketManager {
             if (drawingPanel != null) {
                 drawingPanel.clearDrawing();
             }
+        });
+    }
+
+    // 채팅 메시지를 받았을 때 호출되는 메서드
+    private void onReceiveChat(String message) {
+        SwingUtilities.invokeLater(() -> {
+            GameScreen1.addChatMessage(message);
         });
     }
 

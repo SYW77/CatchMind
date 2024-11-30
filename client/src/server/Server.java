@@ -134,17 +134,15 @@ public class Server {
                     if (input.startsWith("CHAT:")) {
                         String message = input.substring(5);
                         if (message.equalsIgnoreCase(currentWord)) {
-                            broadcastMessage("MSG: " + playerName + " has guessed the word correctly! The word was: " + currentWord);
+                            broadcastMessage("MSG:" + playerName + " has guessed the word correctly! The word was: " + currentWord);
                             playerScores.put(playerName, playerScores.get(playerName) + 1);
 
-                            // 정답을 맞췄으므로 타이머 취소
                             if (currentRoundTask != null) {
                                 currentRoundTask.cancel(true);
                             }
-
                             initiateNextRound();
                         } else {
-                            broadcastMessage("CHAT: " + playerName + ": " + message);
+                            broadcastMessage("CHAT:" + playerName + ": " + message);
                         }
                     } else if (input.startsWith("RESET")) {
                         // reset 신호를 모든 클라이언트에게 브로드캐스트
