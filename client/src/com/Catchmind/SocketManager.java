@@ -320,7 +320,7 @@ public class SocketManager {
 
     private static void onReceiveNextRound() {
         SwingUtilities.invokeLater(() -> {
-            GameScreen1.amoveToNextRound();
+            GameScreen1.moveToNextRound();
         });
     }
 

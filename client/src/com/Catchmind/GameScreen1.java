@@ -39,12 +39,12 @@ public class GameScreen1 {
     // 타이머 상태 표시를 위한 상수 추가
     private static final String TIMER_NOT_STARTED = "Game not yet started";
     private static final String TIMER_ENDED = "Game ended";
-    private static final Color TIMER_NOT_STARTED_COLOR = Color.GRAY;
-    private static final Color TIMER_ENDED_COLOR = new Color(34, 139, 34); // Forest Green
 
     // 타이머 색상 상수 추가
     private static final Color TIMER_NORMAL_COLOR = new Color(200, 220, 255);
     private static final Color TIMER_WARNING_COLOR = Color.RED;
+    private static final Color TIMER_NOT_STARTED_COLOR = Color.GRAY;
+    private static final Color TIMER_ENDED_COLOR = new Color(34, 139, 34); // Forest Green
 
     // gameStarted 플래그 추가 및 관리
     private static boolean gameStarted = false;
@@ -270,7 +270,7 @@ public class GameScreen1 {
         // 하단: 타이머 및 답변 입력 영역
         timerPanel = new JPanel();
         timerPanel.setBounds(20, 370, 720, 35);
-        timerPanel.setBackground(new Color(200, 220, 255));
+        timerPanel.setBackground(TIMER_NORMAL_COLOR);
         frame.getContentPane().add(timerPanel);
 
         timerLabel = new JLabel("Remaining Time: 30sec"); // 타이머 라벨 초기화
@@ -322,7 +322,7 @@ public class GameScreen1 {
             timerPanel.setBounds(20, 370, panelWidth, 35);
 
             if (seconds == 10) {
-                timerPanel.setBackground(Color.RED);
+                timerPanel.setBackground(TIMER_WARNING_COLOR);
                 timerLabel.setForeground(Color.WHITE);
             }
         });
