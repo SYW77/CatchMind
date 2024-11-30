@@ -1,13 +1,13 @@
 package com.Catchmind;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.io.*;
 import java.util.Base64;
+import java.util.ArrayList;
+import java.util.zip.GZIPOutputStream;
 
 public class DrawingPanel extends JPanel {
     private List<Line> lines;
@@ -16,6 +16,9 @@ public class DrawingPanel extends JPanel {
     private SocketManager socketManager;
 
     private static DrawingPanel instance;
+
+    private static final int BATCH_SIZE = 5;
+    private List<Line> pendingLines = new ArrayList<>();
 
     public static DrawingPanel getInstance() {
         return instance;
@@ -34,9 +37,21 @@ public class DrawingPanel extends JPanel {
         this.socketManager = SocketManager.getInstance();
 
         addMouseListener(new MouseAdapter() {
+            private List<Line> currentStrokeLines = new ArrayList<>();
+
             @Override
             public void mousePressed(MouseEvent e) {
-                lastPoint = e.getPoint(); // 마우스 클릭 위치 저장
+                lastPoint = e.getPoint();
+                currentStrokeLines.clear(); // 새로운 스트로크 시작
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (currentStrokeLines.size() > 0) {
+                    // 마우스를 떼면 현재까지의 선들을 압축해서 전송
+                    sendCompressedLines(currentStrokeLines);
+                    currentStrokeLines.clear();
+                }
             }
         });
 
@@ -45,12 +60,17 @@ public class DrawingPanel extends JPanel {
             public void mouseDragged(MouseEvent e) {
                 Point currentPoint = e.getPoint();
                 if (lastPoint != null) {
-                    lines.add(new Line(lastPoint, currentPoint, currentColor)); // 선 추가
-                    repaint(); // 화면 갱신
-                    lastPoint = currentPoint; // 마지막 위치 업데이트
-
-                    // 서버에 그린 그림을 전송
-                    sendDrawingToServer();
+                    Line newLine = new Line(lastPoint, currentPoint, currentColor);
+                    lines.add(newLine);
+                    pendingLines.add(newLine);
+                    repaint();
+                    lastPoint = currentPoint;
+                    
+                    // 일정 개수의 선이 모이면 압축 전송
+                    if (pendingLines.size() >= BATCH_SIZE) {
+                        sendCompressedLines(new ArrayList<>(pendingLines));
+                        pendingLines.clear();
+                    }
                 }
             }
         });
@@ -69,41 +89,52 @@ public class DrawingPanel extends JPanel {
         }
     }
 
-    // 서버에 그려진 그림을 Base64로 인코딩하여 전송
-    private void sendDrawingToServer() {
+    // Line 클래스에 직렬화 기능 추가
+    public void sendLineToServer(Line line) {
         try {
-            // 임시 이미지를 그리기 위한 BufferedImage 생성
-            int width = getWidth();
-            int height = getHeight();
-            BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = image.createGraphics();
-            paint(g2d); // 현재 그려진 상태를 이미지로 그리기
-            g2d.dispose();
+            // 선 데이터를 문자열로 변환
+            String lineData = line.start.x + "," + line.start.y + "," + 
+                             line.end.x + "," + line.end.y + "," + 
+                             line.color.getRGB();
+            socketManager.sendLine("LINE:" + lineData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            // 이미지를 base64로 인코딩
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", byteArrayOutputStream);
-            byte[] imageBytes = byteArrayOutputStream.toByteArray();
-            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+    // 서버로부터 선 데이터 수신 처리
+    public void drawLineFromServer(String lineData) {
+        String[] parts = lineData.split(",");
+        Point start = new Point(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        Point end = new Point(Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+        Color color = new Color(Integer.parseInt(parts[4]));
+        
+        lines.add(new Line(start, end, color));
+        repaint();
+    }
 
-            // 서버에 그림 데이터를 전송
-            socketManager.sendDrawing(base64Image);
+    public void sendCompressedLines(List<Line> lines) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            GZIPOutputStream gzipOut = new GZIPOutputStream(baos);
+            ObjectOutputStream objectOut = new ObjectOutputStream(gzipOut);
+            
+            objectOut.writeObject(lines);
+            objectOut.close();
+            
+            byte[] compressedData = baos.toByteArray();
+            String base64Compressed = Base64.getEncoder().encodeToString(compressedData);
+            
+            socketManager.sendLine("COMPRESSED:" + base64Compressed);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // 서버로부터 그림을 받았을 때 호출되는 메서드
-    public void setDrawingFromServer(String base64Image) {
-        try {
-            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageBytes);
-            BufferedImage image = ImageIO.read(byteArrayInputStream);
-
-            Graphics g = getGraphics();
-            g.drawImage(image, 0, 0, null); // 서버에서 받은 이미지를 화면에 그리기
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    // 그림판 초기화 메서드
+    public void clearDrawing() {
+        lines.clear();
+        pendingLines.clear();
+        repaint();
     }
 }

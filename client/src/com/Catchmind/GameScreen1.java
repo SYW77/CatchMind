@@ -132,8 +132,8 @@ public class GameScreen1 {
         resetButton.setFont(new Font("맑은 고딕", Font.PLAIN, 10));
         toolPanel.add(resetButton);
         resetButton.addActionListener(e -> {
-        	lines.clear(); // 모든 그림 데이터 삭제
-            drawingPanel.repaint(); // 그림판 새로고침
+            drawingPanel.clearDrawing(); // 현재 클라이언트 화면 초기화
+            SocketManager.getInstance().sendReset(); // reset 신호 전송
         });
         
         

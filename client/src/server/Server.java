@@ -146,9 +146,18 @@ public class Server {
                         } else {
                             broadcastMessage("CHAT: " + playerName + ": " + message);
                         }
-                    } else if (input.startsWith("DRAW:")) {
-                        String base64Drawing = input.substring(5);
-                        broadcastDrawing(base64Drawing, this);
+                    } else if (input.startsWith("RESET")) {
+                        // reset 신호를 모든 클라이언트에게 브로드캐스트
+                        broadcastReset(this);
+                    } else if (input.startsWith("LINE:")) {
+                        String lineData = input.substring(5);
+                        broadcastLine(lineData, this);
+                    } else if (input.startsWith("LINES:")) {
+                        String linesData = input.substring(6);
+                        broadcastLines(linesData, this);
+                    } else if (input.startsWith("COMPRESSED:")) {
+                        String compressedData = input.substring(11);
+                        broadcastCompressedLines(compressedData, this);
                     }
                 }
             } catch (IOException e) {
@@ -182,10 +191,34 @@ public class Server {
             return playerName;
         }
 
-        private void broadcastDrawing(String base64Drawing, PlayerHandler sender) {
+        private void broadcastLine(String lineData, PlayerHandler sender) {
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
-                    handler.sendMessage("DRAW:" + base64Drawing);
+                    handler.sendMessage("LINE:" + lineData);
+                }
+            }
+        }
+
+        private void broadcastLines(String linesData, PlayerHandler sender) {
+            for (PlayerHandler handler : playerHandlers) {
+                if (handler != sender) {
+                    handler.sendMessage("LINES:" + linesData);
+                }
+            }
+        }
+
+        private void broadcastCompressedLines(String compressedData, PlayerHandler sender) {
+            for (PlayerHandler handler : playerHandlers) {
+                if (handler != sender) {
+                    handler.sendMessage("COMPRESSED:" + compressedData);
+                }
+            }
+        }
+
+        private void broadcastReset(PlayerHandler sender) {
+            for (PlayerHandler handler : playerHandlers) {
+                if (handler != sender) {
+                    handler.sendMessage("RESET");
                 }
             }
         }
