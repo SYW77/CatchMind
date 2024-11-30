@@ -329,22 +329,34 @@ public class GameScreen1 {
     }
 
     public static void setHint(String newHint) {
-        hint = newHint; // hint에 값을 설정
+        SwingUtilities.invokeLater(() -> {
+            // 힌트 라벨 업데이트
+            if (hintLabel != null) {
+                hintLabel.setText(newHint);
+                hintLabel.setVisible(true); // 힌트를 보이게 설정
+            }
+        });
     }
 
     public static void moveToNextRound() {
         // 힌트 초기화
-        hintLabel.setText("Hint: ");
+        hintLabel.setVisible(false); // 힌트 숨기기
+        hintLabel.setText("");
+        
+        // 힌트 기본 라벨 초기화
+        JLabel hintLabel_basic = (JLabel) hintLabel.getParent().getComponent(0);
+        hintLabel_basic.setVisible(true);
 
         // 그림 초기화
         drawingPanel.clearDrawing();
 
         // 타이머 색상 초기화
-        timerPanel.setBackground(new Color(200, 220, 255));
+        timerPanel.setBackground(TIMER_NORMAL_COLOR);
         timerLabel.setForeground(Color.BLACK);
 
         // 타이머 텍스트 초기화
         timerLabel.setText("Remaining Time: 30 sec");
+        timerPanel.setBounds(20, 370, 720, 35); // 타이머 길이도 초기화
     }
 
     // 게임 시작 전 상태 표시

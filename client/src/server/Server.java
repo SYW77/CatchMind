@@ -24,28 +24,29 @@ public class Server {
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Game server started on port " + PORT);
-            
+
             while (true) {
                 if (playerHandlers.size() < MAX_PLAYERS) {
                     Socket playerSocket = serverSocket.accept();
                     PlayerHandler playerHandler = new PlayerHandler(playerSocket);
                     playerHandlers.add(playerHandler);
                     new Thread(playerHandler).start();
-                    broadcastMessage("MSG: A new player has joined the game! Current players: " + playerHandlers.size());
+                    broadcastMessage(
+                            "MSG: A new player has joined the game! Current players: " + playerHandlers.size());
                 }
                 if (playerHandlers.size() == MAX_PLAYERS && currentRound == 0) {
                     broadcastMessage("MSG: All players have joined! Game will start in 3 seconds...");
-                    
+
                     broadcastMessage("TIMER:3");
                     Thread.sleep(1000);
                     broadcastMessage("TIMER:2");
                     Thread.sleep(1000);
                     broadcastMessage("TIMER:1");
                     Thread.sleep(1000);
-                    
+
                     broadcastMessage("GAME_START");
                     Thread.sleep(500);
-                    
+
                     initiateNextRound();
                 }
             }
@@ -71,14 +72,15 @@ public class Server {
         }
         if (playerIterator.hasNext()) {
             broadcastMessage("RESET");
-            
+
             currentDrawer = playerIterator.next();
             selectNewWord();
-            
+
             broadcastMessage("ROUND:" + currentRound);
             currentDrawer.sendMessage("WORD:" + currentWord);
             broadcastMessage("DRAWER:" + currentDrawer.getName());
-            broadcastMessageExcept(currentDrawer, "MSG: Round " + currentRound + " has started! " + currentDrawer.getName() + " is drawing.");
+            broadcastMessageExcept(currentDrawer,
+                    "MSG: Round " + currentRound + " has started! " + currentDrawer.getName() + " is drawing.");
 
             timeRemaining = 30;
             if (currentRoundTask != null) {
@@ -115,7 +117,7 @@ public class Server {
             first = false;
         }
         scoresJson.append("}");
-        
+
         broadcastMessage(scoresJson.toString());
     }
 
@@ -138,8 +140,9 @@ public class Server {
                 sendMessage("MSG: Welcome to the game!");
                 playerName = in.readLine();
                 System.out.println(playerName + "has connected");
-                broadcastMessage("MSG: " + playerName + " has joined the game! Current players: " + playerHandlers.size());
-                
+                broadcastMessage(
+                        "MSG: " + playerName + " has joined the game! Current players: " + playerHandlers.size());
+
                 playerScores.put(playerName, 0);
                 broadcastScores();
 
@@ -148,14 +151,16 @@ public class Server {
                     if (input.startsWith("CHAT:")) {
                         String message = input.substring(5);
                         if (message.equalsIgnoreCase(currentWord)) {
-                            broadcastMessage("MSG:" + playerName + " has guessed the word correctly! The word was: " + currentWord);
+                            broadcastMessage("MSG:" + playerName + " has guessed the word correctly! The word was: "
+                                    + currentWord);
                             playerScores.put(playerName, playerScores.get(playerName) + 1);
                             broadcastScores();
-                            
+
                             if (currentRoundTask != null) {
                                 currentRoundTask.cancel(true);
                             }
                             initiateNextRound();
+                            broadcastMessage("NEXT_ROUND");
                         } else {
                             broadcastMessage("CHAT:" + playerName + ": " + message);
                         }
@@ -206,8 +211,9 @@ public class Server {
         }
 
         private void broadcastLine(String lineData, PlayerHandler sender) {
-            if (sender != currentDrawer) return;
-            
+            if (sender != currentDrawer)
+                return;
+
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("LINE:" + lineData);
@@ -216,8 +222,9 @@ public class Server {
         }
 
         private void broadcastLines(String linesData, PlayerHandler sender) {
-            if (sender != currentDrawer) return;
-            
+            if (sender != currentDrawer)
+                return;
+
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("LINES:" + linesData);
@@ -226,8 +233,9 @@ public class Server {
         }
 
         private void broadcastCompressedLines(String compressedData, PlayerHandler sender) {
-            if (sender != currentDrawer) return;
-            
+            if (sender != currentDrawer)
+                return;
+
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("COMPRESSED:" + compressedData);
@@ -236,8 +244,9 @@ public class Server {
         }
 
         private void broadcastReset(PlayerHandler sender) {
-            if (sender != currentDrawer) return;
-            
+            if (sender != currentDrawer)
+                return;
+
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("RESET");
@@ -259,24 +268,27 @@ public class Server {
             }
         }
     }
-    
+
     private static void showHint(String currentWord) {
-    	int count;
-    	count = currentWord.length();
-    	String outputString = "";
-    	for(int i=0;i<count;i++) {
-    		outputString+="*";
-    	}
-    	broadcastMessage("Hint: "+outputString);
+        StringBuilder hint = new StringBuilder();
+        hint.append("Hint: ");
+        for (int i = 0; i < currentWord.length(); i++) {
+            hint.append("*");
+        }
+        broadcastMessage("HINT:" + hint.toString());
     }
-    
+
     private static void startTimer() {
         currentRoundTask = roundTimer.scheduleAtFixedRate(() -> {
             if (timeRemaining > 0) {
                 broadcastMessage("TIMER:" + timeRemaining);
 
                 if (timeRemaining == 10) {
-                    showHint(currentWord);
+                    StringBuilder hint = new StringBuilder();
+                    for (int i = 0; i < currentWord.length(); i++) {
+                        hint.append("*");
+                    }
+                    broadcastMessage("HINT:" + hint.toString());
                 }
 
                 timeRemaining--;
@@ -284,6 +296,7 @@ public class Server {
                 broadcastMessage("MSG: Time out! The correct word was: " + currentWord);
                 currentRoundTask.cancel(true);
                 initiateNextRound();
+                broadcastMessage("NEXT_ROUND");
             }
         }, 0, 1000, TimeUnit.MILLISECONDS);
     }

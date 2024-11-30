@@ -135,7 +135,7 @@ public class SocketManager {
         } else if (message.startsWith("TIMER:")) {
             String timerValue = message.substring(6);
             onReceiveTimer(timerValue);
-        } else if (message.startsWith("Hint:")) {
+        } else if (message.startsWith("HINT:")) {
             String hint = message.substring(5);
             onReceiveHint(hint);
         } else if (message.startsWith("WORD:")) {
@@ -160,13 +160,15 @@ public class SocketManager {
         } else if (message.startsWith("SCORES:")) {
             String scoresJson = message.substring(7);
             onReceiveScores(scoresJson);
+        } else if (message.equals("NEXT_ROUND")) {
+            onReceiveNextRound();
         }
     }
 
     // 힌트를 받았을 때 호출되는 메서드
     private static void onReceiveHint(String hint) {
         SwingUtilities.invokeLater(() -> {
-            GameScreen1.setHint(hint);
+            GameScreen1.setHint("Hint: " + hint);
         });
     }
 
@@ -314,6 +316,12 @@ public class SocketManager {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static void onReceiveNextRound() {
+        SwingUtilities.invokeLater(() -> {
+            GameScreen1.amoveToNextRound();
+        });
     }
 
     public void closeConnection() {
