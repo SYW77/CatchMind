@@ -19,6 +19,7 @@ public class Server {
     private static Map<String, Integer> playerScores = new HashMap<>();
     private static ScheduledExecutorService roundTimer = Executors.newSingleThreadScheduledExecutor();
     private static Future<?> currentRoundTask;
+    private static int timeRemaining = 30;
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -33,22 +34,36 @@ public class Server {
                     broadcastMessage("MSG: A new player has joined the game! Current players: " + playerHandlers.size());
                 }
                 if (playerHandlers.size() == MAX_PLAYERS && currentRound == 0) {
-                    broadcastMessage("MSG: All players have joined! The game will begin.");
+                    broadcastMessage("MSG: All players have joined! Game will start in 3 seconds...");
+                    
+                    broadcastMessage("TIMER:3");
+                    Thread.sleep(1000);
+                    broadcastMessage("TIMER:2");
+                    Thread.sleep(1000);
+                    broadcastMessage("TIMER:1");
+                    Thread.sleep(1000);
+                    
+                    broadcastMessage("GAME_START");
+                    Thread.sleep(500);
+                    
                     initiateNextRound();
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } finally {
-            roundTimer.shutdown(); // 서버 종료 시 타이머 종료
+            roundTimer.shutdown();
         }
     }
 
     private static void initiateNextRound() {
         if (currentRound >= TOTAL_ROUNDS) {
             broadcastMessage("MSG: The game has ended!");
+            broadcastMessage("GAME_END");
             displayScores();
-            roundTimer.shutdown(); // 타이머 종료
+            roundTimer.shutdown();
             return;
         }
         currentRound++;
@@ -56,27 +71,21 @@ public class Server {
             playerIterator = playerHandlers.iterator();
         }
         if (playerIterator.hasNext()) {
+            broadcastMessage("RESET");
+            
             currentDrawer = playerIterator.next();
             selectNewWord();
-            sendCurrentWordToDrawer(currentDrawer); // 출제자에게 제시어 전송
-            broadcastMessage("PAINTER:" + currentDrawer.getName()); // 출제자 정보를 모든 클라이언트에 브로드캐스트
+            
+            broadcastMessage("ROUND:" + currentRound);
+            currentDrawer.sendMessage("WORD:" + currentWord);
+            broadcastMessage("DRAWER:" + currentDrawer.getName());
             broadcastMessageExcept(currentDrawer, "MSG: Round " + currentRound + " has started! " + currentDrawer.getName() + " is drawing.");
 
-            // 라운드 타이머 시작
-            broadcastMessage("Timer: Timer has started!");
+            timeRemaining = 30;
             if (currentRoundTask != null) {
-                currentRoundTask.cancel(true); // 이전 타이머 취소
+                currentRoundTask.cancel(true);
             }
-            currentRoundTask = roundTimer.schedule(() -> {
-                broadcastMessage("MSG: Time out! The correct word was: " + currentWord);
-                initiateNextRound(); // 다음 라운드 진행
-            }, 30, TimeUnit.SECONDS);
-            
-            // 20초 후 힌트 방송 (남은 시간 10초일 때)
-            roundTimer.schedule(() -> {
-                showHint(currentWord);
-            }, 20, TimeUnit.SECONDS);
-            
+            startTimer();
         }
     }
 
@@ -91,12 +100,6 @@ public class Server {
 
         currentWord = availableWords.get(new Random().nextInt(availableWords.size()));
         usedWords.add(currentWord);
-    }
-
-    private static void sendCurrentWordToDrawer(PlayerHandler drawer) {
-        if (drawer != null) {
-            drawer.sendMessage("WORD:" + currentWord);
-        }
     }
 
     private static void displayScores() {
@@ -145,7 +148,6 @@ public class Server {
                             broadcastMessage("CHAT:" + playerName + ": " + message);
                         }
                     } else if (input.startsWith("RESET")) {
-                        // reset 신호를 모든 클라이언트에게 브로드캐스트
                         broadcastReset(this);
                     } else if (input.startsWith("LINE:")) {
                         String lineData = input.substring(5);
@@ -190,6 +192,8 @@ public class Server {
         }
 
         private void broadcastLine(String lineData, PlayerHandler sender) {
+            if (sender != currentDrawer) return;
+            
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("LINE:" + lineData);
@@ -198,6 +202,8 @@ public class Server {
         }
 
         private void broadcastLines(String linesData, PlayerHandler sender) {
+            if (sender != currentDrawer) return;
+            
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("LINES:" + linesData);
@@ -206,6 +212,8 @@ public class Server {
         }
 
         private void broadcastCompressedLines(String compressedData, PlayerHandler sender) {
+            if (sender != currentDrawer) return;
+            
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("COMPRESSED:" + compressedData);
@@ -214,6 +222,8 @@ public class Server {
         }
 
         private void broadcastReset(PlayerHandler sender) {
+            if (sender != currentDrawer) return;
+            
             for (PlayerHandler handler : playerHandlers) {
                 if (handler != sender) {
                     handler.sendMessage("RESET");
@@ -246,5 +256,21 @@ public class Server {
     	broadcastMessage("Hint: "+outputString);
     }
     
-    
+    private static void startTimer() {
+        currentRoundTask = roundTimer.scheduleAtFixedRate(() -> {
+            if (timeRemaining > 0) {
+                broadcastMessage("TIMER:" + timeRemaining);
+
+                if (timeRemaining == 10) {
+                    showHint(currentWord);
+                }
+
+                timeRemaining--;
+            } else {
+                broadcastMessage("MSG: Time out! The correct word was: " + currentWord);
+                currentRoundTask.cancel(true);
+                initiateNextRound();
+            }
+        }, 0, 1000, TimeUnit.MILLISECONDS);
+    }
 }

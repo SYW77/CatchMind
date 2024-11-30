@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.Base64;
 import java.util.zip.GZIPInputStream;
 import java.util.List;
+import java.awt.Color;
 
 public class SocketManager {
     private static SocketManager instance; // 싱글톤
@@ -43,6 +44,11 @@ public class SocketManager {
             socket = new Socket(serverAddress, port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // 연결 시 Game not yet started 상태 표시
+            SwingUtilities.invokeLater(() -> {
+                GameScreen1.showGameNotStarted();
+            });
 
             String welcomeMessage = in.readLine();
             System.out.println(welcomeMessage);
@@ -124,9 +130,9 @@ public class SocketManager {
         } else if (message.startsWith("MSG:")) {
             String chatMessage = message.substring(4); // "MSG:" 이후 부분을 추출
             onReceiveMessage(chatMessage); // 일반 메시지 처리
-        } else if (message.startsWith("Timer:")) {
-            String timer = message.substring(6);
-            onReceiveTimer(timer); // 타이머 메시지 처리
+        } else if (message.startsWith("TIMER:")) {
+            String timerValue = message.substring(6);
+            onReceiveTimer(timerValue);
         } else if (message.startsWith("Hint:")) {
             String hint = message.substring(5);
             onReceiveHint(hint);
@@ -139,6 +145,16 @@ public class SocketManager {
         } else if (message.startsWith("CHAT:")) {
             String chatMessage = message.substring(5);
             onReceiveChat(chatMessage);
+        } else if (message.startsWith("ROUND:")) {
+            int round = Integer.parseInt(message.substring(6));
+            onReceiveRound(round);
+        } else if (message.startsWith("DRAWER:")) {
+            String drawerName = message.substring(7);
+            onReceiveDrawer(drawerName);
+        } else if (message.equals("GAME_START")) {
+            onGameStart();
+        } else if (message.equals("GAME_END")) {
+            onGameEnd();
         }
     }
 
@@ -150,10 +166,15 @@ public class SocketManager {
     }
 
     // 타이머 메시지를 받았을 때 호출되는 메서드(타이머 시작)
-    private static void onReceiveTimer(String timer) {
-        SwingUtilities.invokeLater(() -> {
-            GameScreen1.startTimer();
-        });
+    private static void onReceiveTimer(String timerValue) {
+        try {
+            int seconds = Integer.parseInt(timerValue);
+            SwingUtilities.invokeLater(() -> {
+                GameScreen1.updateTimer(seconds);
+            });
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
     }
 
     // 키워드를 받았을 때 호출되는 메서드(출제자에게 전달)
@@ -162,7 +183,7 @@ public class SocketManager {
             GameScreen1.setKeyword(keyword); // 키워드 업데이트
         });
     }
-    
+
     // 일반 메시지를 수신했을 때 호출되는 메서드 (예: 채팅 메시지)
     private void onReceiveMessage(String message) {
         SwingUtilities.invokeLater(() -> {
@@ -204,20 +225,19 @@ public class SocketManager {
             ByteArrayInputStream bais = new ByteArrayInputStream(decodedData);
             GZIPInputStream gzipIn = new GZIPInputStream(bais);
             ObjectInputStream objectIn = new ObjectInputStream(gzipIn);
-            
+
             @SuppressWarnings("unchecked")
             List<Line> decompressedLines = (List<Line>) objectIn.readObject();
             objectIn.close();
-            
+
             SwingUtilities.invokeLater(() -> {
                 DrawingPanel drawingPanel = DrawingPanel.getInstance();
                 if (drawingPanel != null) {
                     for (Line line : decompressedLines) {
                         drawingPanel.drawLineFromServer(
-                            line.start.x + "," + line.start.y + "," +
-                            line.end.x + "," + line.end.y + "," +
-                            line.color.getRGB()
-                        );
+                                line.start.x + "," + line.start.y + "," +
+                                        line.end.x + "," + line.end.y + "," +
+                                        line.color.getRGB());
                     }
                 }
             });
@@ -240,6 +260,30 @@ public class SocketManager {
     private void onReceiveChat(String message) {
         SwingUtilities.invokeLater(() -> {
             GameScreen1.addChatMessage(message);
+        });
+    }
+
+    private void onReceiveRound(int round) {
+        SwingUtilities.invokeLater(() -> {
+            GameScreen1.updateRound(round);
+        });
+    }
+
+    private void onReceiveDrawer(String drawerName) {
+        SwingUtilities.invokeLater(() -> {
+            GameScreen1.updateDrawer(drawerName);
+        });
+    }
+
+    private void onGameStart() {
+        SwingUtilities.invokeLater(() -> {
+            GameScreen1.startGameTimer();
+        });
+    }
+
+    private void onGameEnd() {
+        SwingUtilities.invokeLater(() -> {
+            GameScreen1.showGameEnded();
         });
     }
 
