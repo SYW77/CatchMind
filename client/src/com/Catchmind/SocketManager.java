@@ -24,6 +24,8 @@ public class SocketManager {
 
     private Thread listenerThread; // 수신 스레드
 
+    private String latestScores = "{}";
+    
     private SocketManager(String serverAddress, int port) {
         this.serverAddress = serverAddress;
         this.port = port;
@@ -116,9 +118,12 @@ public class SocketManager {
         listenerThread.start();
     }
 
+    private boolean gameStarted = false;
+    private boolean gameEnded = false;
+    
     // 서버로부터 받은 메시지를 처리
     private void handleReceivedMessage(String message) {
-        if (message.startsWith("LINE:")) {
+    	if (message.startsWith("LINE:")) {
             String lineData = message.substring(5);
             onReceiveLine(lineData);
         } else if (message.startsWith("LINES:")) {
@@ -130,8 +135,8 @@ public class SocketManager {
             String compressedData = message.substring(11);
             onReceiveCompressedLines(compressedData);
         } else if (message.startsWith("MSG:")) {
-            String chatMessage = message.substring(4); // "MSG:" 이후 부분을 추출
-            onReceiveMessage(chatMessage); // 일반 메시지 처리
+            String chatMessage = message.substring(4);
+            onReceiveMessage(chatMessage);
         } else if (message.startsWith("TIMER:")) {
             String timerValue = message.substring(6);
             onReceiveTimer(timerValue);
@@ -139,10 +144,10 @@ public class SocketManager {
             String hint = message.substring(5);
             onReceiveHint(hint);
         } else if (message.startsWith("WORD:")) {
-            String keyword = message.substring(5); // "WORD:" 이후 부분을 추출
+            String keyword = message.substring(5);
             onReceiveWord(keyword);
             if (keywordListener != null) {
-                keywordListener.accept(keyword); // 키워드 리스너 호출
+                keywordListener.accept(keyword);
             }
         } else if (message.startsWith("CHAT:")) {
             String chatMessage = message.substring(5);
@@ -153,13 +158,17 @@ public class SocketManager {
         } else if (message.startsWith("DRAWER:")) {
             String drawerName = message.substring(7);
             onReceiveDrawer(drawerName);
-        } else if (message.equals("GAME_START")) {
-            onGameStart();
-        } else if (message.equals("GAME_END")) {
-            onGameEnd();
         } else if (message.startsWith("SCORES:")) {
-            String scoresJson = message.substring(7);
-            onReceiveScores(scoresJson);
+            latestScores = message.substring(7);
+            String scoresJson = message.substring(7); // "SCORES:" 이후의 JSON 데이터
+            Map<String, Integer> scores = parseScores(scoresJson);
+            SwingUtilities.invokeLater(() -> GameScreen1.updatePlayerInfo(scores));
+        } else if (message.equals("GAME_END")) {
+            gameEnded = true;
+            SwingUtilities.invokeLater(() -> GameScreen1.showGameEnded());
+        } else if (message.equals("GAME_START")) {
+            gameStarted = true;
+            gameEnded = false; // 게임 시작 시 초기화
         } else if (message.equals("NEXT_ROUND")) {
             onReceiveNextRound();
         }
@@ -297,7 +306,7 @@ public class SocketManager {
     private void onReceiveScores(String scoresJson) {
         try {
             // JSON 파싱 (간단한 구현)
-            scoresJson = scoresJson.substring(1, scoresJson.length() - 1); // {} 제거
+            scoresJson = scoresJson.substring(1, scoresJson.length() - 1); 
             Map<String, Integer> scores = new HashMap<>();
 
             if (!scoresJson.isEmpty()) {
@@ -323,6 +332,10 @@ public class SocketManager {
             GameScreen1.moveToNextRound();
         });
     }
+    
+    public String getScores() { 
+        return latestScores;
+    }
 
     public void closeConnection() {
         try {
@@ -332,5 +345,33 @@ public class SocketManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    private boolean isRunning = true; // 소켓 리스닝 상태를 제어하는 플래그
+
+    public void stop() {
+        isRunning = false;
+        closeConnection();
+        
+    }
+    
+ // JSON 데이터를 Map으로 변환
+    private Map<String, Integer> parseScores(String scoresJson) {
+        Map<String, Integer> scores = new HashMap<>();
+        try {
+            scoresJson = scoresJson.replace("{", "").replace("}", ""); // {} 제거
+            if (!scoresJson.trim().isEmpty()) {
+                String[] entries = scoresJson.split(",");
+                for (String entry : entries) {
+                    String[] keyValue = entry.split(":");
+                    String playerName = keyValue[0].replace("\"", "").trim();
+                    int score = Integer.parseInt(keyValue[1].trim());
+                    scores.put(playerName, score);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return scores;
     }
 }

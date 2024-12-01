@@ -1,6 +1,11 @@
 package com.Catchmind;
 
 import java.awt.*;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.swing.*;
 
 public class EndScreen {
@@ -8,21 +13,10 @@ public class EndScreen {
     private JFrame frame;
     private JTextPane playerInfoArea; // 플레이어 정보를 표시할 텍스트 영역
 
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    EndScreen window = new EndScreen();
-                    window.frame.setVisible(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
 
     public EndScreen() {
         initialize();
+        frame.setVisible(true);
     }
 
     private void initialize() {
@@ -68,4 +62,37 @@ public class EndScreen {
             frame.dispose();
         });
     }
+    
+    public static void showScores(String scoresJson) {
+        SwingUtilities.invokeLater(() -> {
+            EndScreen endScreen = new EndScreen();
+            StringBuilder leaderboard = new StringBuilder();
+
+            // 점수 데이터를 파싱 및 정렬
+            String processedScoresJson = scoresJson.substring(1, scoresJson.length() - 1); // {} 제거
+            Map<String, Integer> scores = new HashMap<>();
+            if (!processedScoresJson.isEmpty()) {
+                String[] entries = processedScoresJson.split(",");
+                for (String entry : entries) {
+                    String[] parts = entry.split(":");
+                    String name = parts[0].replace("\"", "");
+                    int score = Integer.parseInt(parts[1]);
+                    scores.put(name, score);
+                }
+            }
+
+            // 점수 정렬
+            List<Map.Entry<String, Integer>> sortedScores = new ArrayList<>(scores.entrySet());
+            sortedScores.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+
+            // 정렬된 점수를 StringBuilder에 추가
+            for (Map.Entry<String, Integer> entry : sortedScores) {
+                leaderboard.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            }
+
+            // JTextPane에 점수 데이터 표시
+            endScreen.playerInfoArea.setText(leaderboard.toString());
+        });
+    }
+
 }

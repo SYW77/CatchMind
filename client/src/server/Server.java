@@ -63,6 +63,7 @@ public class Server {
         if (currentRound >= TOTAL_ROUNDS) {
             broadcastMessage("MSG: The game has ended!");
             broadcastMessage("GAME_END");
+            broadcastScores();
             roundTimer.shutdown();
             return;
         }

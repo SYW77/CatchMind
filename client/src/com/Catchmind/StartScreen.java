@@ -11,22 +11,19 @@ public class StartScreen {
     private JFrame frame;
 
     public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    StartScreen window = new StartScreen();
-                    window.frame.setVisible(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        EventQueue.invokeLater(() -> {
+            try {
+                StartScreen window = new StartScreen();
+                window.frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }
 
-    StartScreen() {
+    public StartScreen() { // 생성자에 public 추가
         initialize();
     }
-
 
     private void initialize() {
         frame = new JFrame();
@@ -43,51 +40,42 @@ public class StartScreen {
         gamename.setHorizontalAlignment(SwingConstants.CENTER);
         gamename.setFont(new Font("맑은 고딕", Font.BOLD, 36));
         frame.getContentPane().add(gamename);
-        
-        
+
         // 사용자 이름 입력 필드
         JTextField username = new JTextField();
         username.setBounds(250, 170, 300, 40);
         username.setFont(new Font("맑은 고딕", Font.PLAIN, 18));
         username.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // 기본 텍스트 및 색상 설정
         username.setText("Enter your name");
         username.setForeground(Color.GRAY);
 
-        // KeyListener로 사용자 입력 처리
         username.addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
             public void keyPressed(java.awt.event.KeyEvent e) {
-                // 기본 텍스트가 표시된 상태에서 첫 입력 시 기본 텍스트 제거
                 if (username.getText().equals("Enter your name")) {
-                    username.setText(""); // 기본 텍스트 제거
-                    username.setForeground(Color.BLACK); // 입력 텍스트 색상을 검정으로 변경
+                    username.setText("");
+                    username.setForeground(Color.BLACK);
                 }
             }
         });
 
-        // FocusListener로 기본 텍스트 복원 처리
         username.addFocusListener(new java.awt.event.FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                // 포커스를 얻으면 아무 작업도 하지 않음 (KeyListener가 처리함)
+                // KeyListener가 처리하므로 아무 작업도 하지 않음
             }
 
             @Override
             public void focusLost(FocusEvent e) {
-                // 텍스트 필드가 비어 있으면 기본 텍스트 복원
                 if (username.getText().trim().isEmpty()) {
                     username.setText("Enter your name");
-                    username.setForeground(Color.GRAY); // 기본 텍스트 색상 복원
+                    username.setForeground(Color.GRAY);
                 }
             }
         });
 
-        // 텍스트 필드 추가
         frame.getContentPane().add(username);
-		
-        
+
         // 호스트 이름 입력 필드
         JTextField hostName = new JTextField();
         hostName.setBounds(250, 220, 300, 40);
@@ -106,11 +94,10 @@ public class StartScreen {
         portNum.setForeground(Color.BLACK);
         frame.getContentPane().add(portNum);
 
-        // FocusListener 수정
+        // 호스트와 포트 번호 필드의 포커스 리스너
         hostName.addFocusListener(new java.awt.event.FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                // 기본값이면 선택
                 if (hostName.getText().equals("localhost")) {
                     hostName.selectAll();
                 }
@@ -118,7 +105,6 @@ public class StartScreen {
 
             @Override
             public void focusLost(FocusEvent e) {
-                // 비어있으면 기본값 복원
                 if (hostName.getText().trim().isEmpty()) {
                     hostName.setText("localhost");
                 }
@@ -128,7 +114,6 @@ public class StartScreen {
         portNum.addFocusListener(new java.awt.event.FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
-                // 기본값이면 선택
                 if (portNum.getText().equals("3000")) {
                     portNum.selectAll();
                 }
@@ -136,7 +121,6 @@ public class StartScreen {
 
             @Override
             public void focusLost(FocusEvent e) {
-                // 비어있으면 기본값 복원
                 if (portNum.getText().trim().isEmpty()) {
                     portNum.setText("3000");
                 }
@@ -148,39 +132,43 @@ public class StartScreen {
         loginBtn.setBounds(351, 330, 100, 40);
         loginBtn.setFont(new Font("맑은 고딕", Font.BOLD, 20));
         frame.getContentPane().add(loginBtn);
-        
-        
+
         // 버튼 클릭 이벤트
         loginBtn.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 String userNameInput = username.getText();
                 String serverInput = hostName.getText();
                 String portInput = portNum.getText();
 
                 if (!userNameInput.isEmpty() && !userNameInput.equals("Enter your name") &&
-                        !serverInput.isEmpty() && !serverInput.equals("Enter the server address") &&
-                        !portInput.isEmpty() && !portInput.equals("Enter the port number")) {
+                        !serverInput.isEmpty() && !portInput.isEmpty()) {
+                    try {
+                        // 소켓 연결을 위한 인스턴스 생성
+                        SocketManager socketManager = SocketManager.getInstance(serverInput, Integer.parseInt(portInput));
 
-                    // 소켓 연결을 위한 인스턴스 생성
-                    SocketManager socketManager = SocketManager.getInstance(serverInput, Integer.parseInt(portInput));
+                        // 서버로 닉네임 전송
+                        socketManager.sendNickname(userNameInput);
 
-                    // 서버로 닉네임 전송
-                    socketManager.sendNickname(userNameInput);
-
-                    // 다음 화면으로 전환
-                    frame.dispose(); // 현재 화면 닫기
-                    EventQueue.invokeLater(() -> {
-                        try {
-                            GameScreen1 gameScreen = new GameScreen1(userNameInput);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    });
+                        // 다음 화면으로 전환
+                        frame.dispose(); // 현재 화면 닫기
+                        EventQueue.invokeLater(() -> {
+                            try {
+                                new GameScreen1(userNameInput); // 게임 화면 호출
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        });
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(frame, "Invalid port number.");
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(frame, "Connection failed. Please try again.");
+                    }
                 } else {
-                    JOptionPane.showMessageDialog(null, "Please enter all fields.");
+                    JOptionPane.showMessageDialog(frame, "Please fill in all fields.");
                 }
             }
         });
     }
-
 }

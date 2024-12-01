@@ -4,6 +4,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -79,7 +80,7 @@ public class GameScreen1 {
                     JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 SocketManager.getInstance().closeConnection(); // 서버와 연결 종료
-                frame.dispose(); // 현재 창 닫기
+                frame.dispose(); // 현재 창 닫기                
             }
         });
 
@@ -371,11 +372,27 @@ public class GameScreen1 {
 
     // 게임 종료 상태 표시
     public static void showGameEnded() {
-        SwingUtilities.invokeLater(() -> {
-            timerLabel.setText(TIMER_ENDED);
-            timerPanel.setBackground(TIMER_ENDED_COLOR);
+    	SwingUtilities.invokeLater(() -> {
+            timerLabel.setText("Game has ended!");
+            timerPanel.setBackground(new Color(34, 139, 34)); // 초록색
             timerLabel.setForeground(Color.WHITE);
             timerPanel.setBounds(20, 370, 720, 35);
+            int confirm = JOptionPane.showConfirmDialog(
+                    frame,
+                    "Game Over! Do you want to check the results?",
+                    "Game Ended",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // 리더보드 표시
+                SwingUtilities.invokeLater(() -> {
+                    String scoresJson = SocketManager.getInstance().getScores(); // 서버에서 점수 가져오기
+                    EndScreen.showScores(scoresJson);
+                });
+            }
+
+            frame.dispose(); // 현재 게임 화면 닫기
         });
     }
 
@@ -457,6 +474,54 @@ public class GameScreen1 {
             updateTimer(30);
         });
     }
+    
+    
+    public static void updatePlayerInfo(Map<String, Integer> scores) {
+        SwingUtilities.invokeLater(() -> {
+            if (playerInfoArea != null) {
+                StringBuilder playerInfo = new StringBuilder("Players:\n");
+
+                // 점수를 기준으로 정렬하기 위해 리스트로 변환
+                List<Map.Entry<String, Integer>> sortedScores = new ArrayList<>(scores.entrySet());
+                sortedScores.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+
+                for (Map.Entry<String, Integer> entry : sortedScores) {
+                    String playerName = entry.getKey();
+                    int score = entry.getValue();
+
+                    // 현재 플레이어 강조 표시
+                    if (playerName.equals(myName)) {
+                        playerInfo.append("▶ ").append(playerName).append(": ").append(score).append("\n");
+                    } else {
+                        playerInfo.append("   ").append(playerName).append(": ").append(score).append("\n");
+                    }
+                }
+
+                playerInfoArea.setText(playerInfo.toString());
+            }
+        });
+    }
+   
+    
+ // JSON 데이터를 Map으로 변환하는 유틸리티 메서드 추가
+    private static Map<String, Integer> parseScores(String scoresJson) {
+        Map<String, Integer> scores = new HashMap<>();
+        try {
+            scoresJson = scoresJson.replace("{", "").replace("}", ""); // {} 제거
+            if (!scoresJson.trim().isEmpty()) {
+                String[] entries = scoresJson.split(",");
+                for (String entry : entries) {
+                    String[] keyValue = entry.split(":");
+                    String playerName = keyValue[0].replace("\"", "").trim();
+                    int score = Integer.parseInt(keyValue[1].trim());
+                    scores.put(playerName, score);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return scores;
+    }
 
     // 리더보드 업데이트 메서드 추가
     public static void updateLeaderboard(Map<String, Integer> scores) {
@@ -484,4 +549,5 @@ public class GameScreen1 {
             }
         });
     }
+    
 }
